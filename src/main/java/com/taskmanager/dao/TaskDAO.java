@@ -81,7 +81,8 @@ public class TaskDAO {
             cstmt.setLong(1, taskId);
             cstmt.setString(2, task.getTitle());
             cstmt.setString(3, task.getDescription());
-            cstmt.setBoolean(4, task.getCompleted() != null ? task.getCompleted() : false);
+            // Convertir Boolean a NUMBER (0 o 1) para Oracle
+            cstmt.setInt(4, task.getCompleted() != null && task.getCompleted() ? 1 : 0);
             
             cstmt.execute();
             
