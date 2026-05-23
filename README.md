@@ -72,16 +72,14 @@ private static final String DB_PASSWORD = "password";
 La API incluye documentación automática generada con Swagger (OpenAPI 3). Para acceder a la documentación interactiva:
 
 ### Swagger UI
-- **URL:** `http://localhost:8080/task-api/swagger-ui/`
-- **Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API.
+- **URL:** `http://localhost:8080/task-api/swagger-index.html`
+- **Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API. Contiene una especificación OpenAPI estática con todos los endpoints documentados.
 
-### Especificación OpenAPI
-- **URL:** `http://localhost:8080/task-api/api/openapi.json`
-- **Descripción:** Especificación OpenAPI 3 en formato JSON.
-
-### Especificación OpenAPI YAML
-- **URL:** `http://localhost:8080/task-api/api/openapi.yaml`
-- **Descripción:** Especificación OpenAPI 3 en formato YAML.
+### Características de la documentación:
+- **Documentación completa:** Todos los endpoints están documentados con descripciones, parámetros y respuestas.
+- **Especificación estática:** La documentación está incrustada en la página HTML, no requiere conexión a `/openapi.json`.
+- **Pruebas interactivas:** Permite probar los endpoints directamente desde el navegador.
+- **Esquemas de datos:** Documenta los modelos de datos (Task) con sus propiedades y tipos.
 
 ### Características de la documentación:
 - **Documentación completa:** Todos los endpoints están documentados con descripciones, parámetros y respuestas.
@@ -223,22 +221,73 @@ El proyecto incluye configuración completa para despliegue con Docker.
 - **`docker-compose-oracle-external.yml`**: Conexión a Oracle externa
 - **`docker-commands.sh` / `docker-commands.bat`**: Scripts de utilidad
 
-### Despliegue rápido con PostgreSQL
+### 🚀 Guía rápida para desarrollo con base de datos
+
+#### **Para pruebas de guardar datos con PostgreSQL:**
 
 ```bash
-# Construir y ejecutar
+# 1. Ir al directorio del backend
 cd PT-Back
-docker-compose up --build
 
-# Ejecutar en segundo plano
+# 2. Levantar todos los servicios (aplicación + PostgreSQL + pgAdmin)
 docker-compose up -d --build
 
-# Ver logs
+# 3. Verificar que todo esté corriendo
+docker-compose ps
+
+# 4. Probar que puedes guardar datos
+curl -X POST "http://localhost:8080/task-api/api/tasks" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Tarea de prueba Docker",
+    "description": "Esta tarea se guarda en PostgreSQL",
+    "completed": false
+  }'
+
+# 5. Listar tareas para verificar
+curl http://localhost:8080/task-api/api/tasks
+```
+
+#### **Acceso a servicios:**
+
+- **API REST:** `http://localhost:8080/task-api/api`
+- **Swagger UI:** `http://localhost:8080/task-api/swagger-index.html`
+- **PostgreSQL:** `localhost:5432` (usuario: taskuser, contraseña: taskpass)
+- **pgAdmin (interfaz web):** `http://localhost:5050` (admin@taskmanager.com / admin123)
+
+#### **Comandos útiles para desarrollo:**
+
+```bash
+# Ver logs en tiempo real
 docker-compose logs -f task-api
 
-# Probar la API
-curl http://localhost:8080/task-api/api/tasks/test
+# Reiniciar solo la aplicación
+docker-compose restart task-api
+
+# Acceder a la consola de PostgreSQL
+docker-compose exec postgres psql -U taskuser -d taskdb
+
+# Detener todo
+docker-compose down
+
+# Detener y eliminar datos (reinicia base de datos)
+docker-compose down -v
 ```
+
+### Modo desarrollo sin base de datos
+
+```bash
+# Para desarrollo rápido sin base de datos real
+docker-compose -f docker-compose-dev.yml up --build
+```
+
+### Configuración para Oracle
+
+Si necesitas conectar a Oracle Database:
+
+1. Copiar el driver JDBC (`ojdbc8.jar`) a `oracle-driver/`
+2. Configurar conexión en `docker-compose-oracle-external.yml`
+3. Ejecutar: `docker-compose -f docker-compose-oracle-external.yml up --build`
 
 ### Usar scripts de utilidad
 
@@ -250,21 +299,6 @@ chmod +x docker-commands.sh
 # Windows
 docker-commands.bat compose-up
 ```
-
-### Acceso a servicios
-
-- **API REST:** `http://localhost:8080/task-api/api`
-- **Swagger UI:** `http://localhost:8080/task-api/swagger-ui/`
-- **PostgreSQL:** `localhost:5432` (usuario: taskuser, contraseña: taskpass)
-- **pgAdmin:** `http://localhost:5050` (admin@taskmanager.com / admin123)
-
-### Configuración para Oracle
-
-Si necesitas conectar a Oracle Database:
-
-1. Copiar el driver JDBC (`ojdbc8.jar`) a `oracle-driver/`
-2. Configurar conexión en `docker-compose-oracle-external.yml`
-3. Ejecutar: `docker-compose -f docker-compose-oracle-external.yml up --build`
 
 Para más detalles, consulta [DOCKER-README.md](DOCKER-README.md).
 
