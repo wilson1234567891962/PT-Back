@@ -50,7 +50,11 @@
                     },
                     "servers": [
                         {
-                            "description": "Servidor de desarrollo",
+                            "description": "Docker (PostgreSQL)",
+                            "url": "http://localhost:8080/task-api/api"
+                        },
+                        {
+                            "description": "Jetty Local",
                             "url": "http://localhost:8082/task-api/api"
                         }
                     ],
@@ -60,7 +64,17 @@
                                 "summary": "Obtener todas las tareas",
                                 "responses": {
                                     "200": {
-                                        "description": "Lista de tareas obtenida exitosamente"
+                                        "description": "Lista de tareas obtenida exitosamente",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Task"
+                                                    }
+                                                }
+                                            }
+                                        }
                                     },
                                     "500": {
                                         "description": "Error interno del servidor"
@@ -69,9 +83,35 @@
                             },
                             "post": {
                                 "summary": "Crear una nueva tarea",
+                                "requestBody": {
+                                    "required": true,
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/Task"
+                                            },
+                                            "examples": {
+                                                "exampleTask": {
+                                                    "value": {
+                                                        "title": "Nueva tarea",
+                                                        "description": "Descripción de la tarea",
+                                                        "completed": false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
                                 "responses": {
                                     "201": {
-                                        "description": "Tarea creada exitosamente"
+                                        "description": "Tarea creada exitosamente",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Task"
+                                                }
+                                            }
+                                        }
                                     },
                                     "400": {
                                         "description": "Solicitud inválida"
@@ -97,7 +137,14 @@
                                 ],
                                 "responses": {
                                     "200": {
-                                        "description": "Tarea obtenida exitosamente"
+                                        "description": "Tarea obtenida exitosamente",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Task"
+                                                }
+                                            }
+                                        }
                                     },
                                     "404": {
                                         "description": "Tarea no encontrada"
@@ -119,9 +166,35 @@
                                         }
                                     }
                                 ],
+                                "requestBody": {
+                                    "required": true,
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "$ref": "#/components/schemas/Task"
+                                            },
+                                            "examples": {
+                                                "exampleTask": {
+                                                    "value": {
+                                                        "title": "Tarea actualizada",
+                                                        "description": "Descripción actualizada",
+                                                        "completed": true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
                                 "responses": {
                                     "200": {
-                                        "description": "Tarea actualizada exitosamente"
+                                        "description": "Tarea actualizada exitosamente",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "$ref": "#/components/schemas/Task"
+                                                }
+                                            }
+                                        }
                                     },
                                     "404": {
                                         "description": "Tarea no encontrada"
@@ -163,6 +236,58 @@
                                     "200": {
                                         "description": "Servicio probado exitosamente"
                                     }
+                                }
+                            }
+                        }
+                    },
+                    "components": {
+                        "schemas": {
+                            "Task": {
+                                "type": "object",
+                                "properties": {
+                                    "taskId": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "description": "ID único de la tarea",
+                                        "readOnly": true
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "description": "Título de la tarea",
+                                        "minLength": 1,
+                                        "maxLength": 100
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "Descripción detallada de la tarea",
+                                        "maxLength": 4000
+                                    },
+                                    "completed": {
+                                        "type": "boolean",
+                                        "description": "Estado de completado de la tarea",
+                                        "default": false
+                                    },
+                                    "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "description": "Fecha y hora de creación",
+                                        "readOnly": true
+                                    },
+                                    "updatedAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "description": "Fecha y hora de última actualización",
+                                        "readOnly": true
+                                    }
+                                },
+                                "required": ["title"],
+                                "example": {
+                                    "taskId": 1,
+                                    "title": "Tarea de ejemplo",
+                                    "description": "Descripción de ejemplo",
+                                    "completed": false,
+                                    "createdAt": "2024-01-01T12:00:00Z",
+                                    "updatedAt": "2024-01-01T12:00:00Z"
                                 }
                             }
                         }

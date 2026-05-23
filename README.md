@@ -56,7 +56,15 @@ private static final String DB_PASSWORD = "password";
 
 ## Endpoints de la API
 
-### Base URL: `http://localhost:8080/task-api/api`
+### URLs base según entorno:
+
+| Entorno | URL Base | Puerto |
+|---------|----------|--------|
+| **Docker** | `http://localhost:8080/task-api/api` | 8080 |
+| **Jetty Local** | `http://localhost:8082/task-api/api` | 8082 |
+| **Tomcat** | `http://localhost:8080/task-api/api` | 8080 |
+
+**Nota:** Todos los ejemplos usan la URL de Docker. Para Jetty local, reemplaza `8080` por `8082`.
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
@@ -72,9 +80,15 @@ private static final String DB_PASSWORD = "password";
 La API incluye documentación automática generada con Swagger (OpenAPI 3). Para acceder a la documentación interactiva:
 
 ### Swagger UI
-- **URL (Docker):** `http://localhost:8080/task-api/swagger-index.html`
-- **URL (Local/Jetty):** `http://localhost:8082/task-api/swagger-index.html`
-- **Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API. Contiene una especificación OpenAPI estática con todos los endpoints documentados.
+La documentación interactiva de la API está disponible en:
+
+| Entorno | URL | Puerto | Descripción |
+|---------|-----|--------|-------------|
+| **Docker** | `http://localhost:8080/task-api/swagger-index.html` | 8080 | Con PostgreSQL en contenedor |
+| **Jetty Local** | `http://localhost:8082/task-api/swagger-index.html` | 8082 | Desarrollo local sin Docker |
+| **Tomcat** | `http://localhost:8080/task-api/swagger-index.html` | 8080 | Despliegue tradicional |
+
+**Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API. Contiene una especificación OpenAPI estática con todos los endpoints documentados.
 
 ### Características de la documentación:
 - **Documentación completa:** Todos los endpoints están documentados con descripciones, parámetros y respuestas.
@@ -167,6 +181,112 @@ target/site/jacoco/index.html
 - **Métodos:** 94%
 - **Clases:** 89%
 - **Total de pruebas:** 69 pruebas unitarias
+
+## Ejecución local con Jetty (Desarrollo)
+
+El proyecto incluye configuración para ejecutar localmente con Jetty Maven Plugin, ideal para desarrollo rápido.
+
+### 1. Ejecutar la aplicación con Jetty
+```bash
+# Ejecutar en modo desarrollo (sin base de datos real)
+mvn jetty:run
+```
+
+### 2. Acceder a la aplicación
+- **API REST:** `http://localhost:8082/task-api/api`
+- **Swagger UI:** `http://localhost:8082/task-api/swagger-index.html`
+
+### 3. Configuración para desarrollo local con base de datos
+
+#### Opción A: Usar PostgreSQL local (recomendado para desarrollo)
+```bash
+# 1. Configurar variables de entorno para PostgreSQL local
+export DB_URL=jdbc:postgresql://localhost:5432/taskdb
+export DB_USER=taskuser
+export DB_PASSWORD=taskpass
+export DB_DRIVER=org.postgresql.Driver
+
+# 2. Ejecutar Jetty con la configuración
+mvn jetty:run
+```
+
+#### Opción B: Usar Oracle local (si tienes Oracle instalado)
+```bash
+# 1. Configurar variables de entorno para Oracle local
+export DB_URL=jdbc:oracle:thin:@localhost:1521:XE
+export DB_USER=system
+export DB_PASSWORD=password
+export DB_DRIVER=oracle.jdbc.driver.OracleDriver
+
+# 2. Ejecutar Jetty con la configuración
+mvn jetty:run
+```
+
+#### Opción C: Usar archivo .env (Windows/Linux/Mac)
+Crear un archivo `.env` en la raíz del proyecto:
+```bash
+# Para PostgreSQL
+DB_URL=jdbc:postgresql://localhost:5432/taskdb
+DB_USER=taskuser
+DB_PASSWORD=taskpass
+DB_DRIVER=org.postgresql.Driver
+
+# Para Oracle
+# DB_URL=jdbc:oracle:thin:@localhost:1521:XE
+# DB_USER=system
+# DB_PASSWORD=password
+# DB_DRIVER=oracle.jdbc.driver.OracleDriver
+```
+
+Luego ejecutar:
+```bash
+# Linux/Mac
+source .env && mvn jetty:run
+
+# Windows (PowerShell)
+Get-Content .env | ForEach-Object { if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($matches[1], $matches[2]) } }
+mvn jetty:run
+```
+
+### 4. Comandos útiles para desarrollo con Jetty
+
+```bash
+# Ejecutar con recarga automática (hot reload)
+mvn jetty:run -Djetty.scanIntervalSeconds=5
+
+# Ejecutar en puerto diferente
+mvn jetty:run -Djetty.port=9090
+
+# Detener Jetty (desde otra terminal)
+mvn jetty:stop
+
+# Ver logs detallados
+mvn jetty:run -Djetty.logs=target/jetty.log
+```
+
+### 5. Probar la aplicación localmente
+```bash
+# Probar endpoint de prueba
+curl http://localhost:8082/task-api/api/tasks/test
+
+# Listar tareas
+curl http://localhost:8082/task-api/api/tasks
+
+# Crear una tarea
+curl -X POST "http://localhost:8082/task-api/api/tasks" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Tarea local",
+    "description": "Creada desde Jetty local",
+    "completed": false
+  }'
+```
+
+### Ventajas de usar Jetty localmente:
+- **Desarrollo rápido:** Recarga automática de cambios
+- **Sin Docker:** No requiere contenedores
+- **Depuración fácil:** Puedes conectar debugger directamente
+- **Configuración flexible:** Cambia entre PostgreSQL y Oracle fácilmente
 
 ## Configuración CORS
 

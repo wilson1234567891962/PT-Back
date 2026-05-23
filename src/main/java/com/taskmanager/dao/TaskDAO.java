@@ -98,7 +98,8 @@ public class TaskDAO {
                 
                 pstmt.setString(1, task.getTitle());
                 pstmt.setString(2, task.getDescription());
-                pstmt.setBoolean(3, task.getCompleted() != null ? task.getCompleted() : false);
+                // Para PostgreSQL, usar INTEGER (0 o 1) en lugar de BOOLEAN
+                pstmt.setInt(3, task.getCompleted() != null && task.getCompleted() ? 1 : 0);
                 
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
@@ -146,7 +147,8 @@ public class TaskDAO {
                 
                 pstmt.setString(1, task.getTitle());
                 pstmt.setString(2, task.getDescription());
-                pstmt.setBoolean(3, task.getCompleted() != null ? task.getCompleted() : false);
+                // Para PostgreSQL, usar INTEGER (0 o 1) en lugar de BOOLEAN
+                pstmt.setInt(3, task.getCompleted() != null && task.getCompleted() ? 1 : 0);
                 pstmt.setLong(4, taskId);
                 
                 int rowsAffected = pstmt.executeUpdate();
@@ -208,7 +210,18 @@ public class TaskDAO {
         task.setTaskId(rs.getLong("TASK_ID"));
         task.setTitle(rs.getString("TITLE"));
         task.setDescription(rs.getString("DESCRIPTION"));
-        task.setCompleted(rs.getBoolean("COMPLETED"));
+        
+        // Manejar tanto INTEGER (PostgreSQL) como BOOLEAN/INTEGER (Oracle)
+        // PostgreSQL usa INTEGER (0 o 1), Oracle puede usar NUMBER(1,0) o BOOLEAN
+        try {
+            // Intentar obtener como booleano primero
+            task.setCompleted(rs.getBoolean("COMPLETED"));
+        } catch (SQLException e) {
+            // Si falla, intentar obtener como entero y convertir
+            int completedInt = rs.getInt("COMPLETED");
+            task.setCompleted(completedInt == 1);
+        }
+        
         task.setCreatedAt(rs.getTimestamp("CREATED_AT"));
         task.setUpdatedAt(rs.getTimestamp("UPDATED_AT"));
         return task;
