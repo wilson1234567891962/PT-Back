@@ -67,6 +67,28 @@ private static final String DB_PASSWORD = "password";
 | DELETE | `/tasks/{id}` | Eliminar una tarea |
 | GET | `/tasks/test` | Probar el servicio |
 
+## Documentación de la API con Swagger/OpenAPI
+
+La API incluye documentación automática generada con Swagger (OpenAPI 3). Para acceder a la documentación interactiva:
+
+### Swagger UI
+- **URL:** `http://localhost:8080/task-api/swagger-ui/`
+- **Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API.
+
+### Especificación OpenAPI
+- **URL:** `http://localhost:8080/task-api/api/openapi.json`
+- **Descripción:** Especificación OpenAPI 3 en formato JSON.
+
+### Especificación OpenAPI YAML
+- **URL:** `http://localhost:8080/task-api/api/openapi.yaml`
+- **Descripción:** Especificación OpenAPI 3 en formato YAML.
+
+### Características de la documentación:
+- **Documentación completa:** Todos los endpoints están documentados con descripciones, parámetros y respuestas.
+- **Ejemplos:** Incluye ejemplos de solicitudes y respuestas.
+- **Pruebas interactivas:** Permite probar los endpoints directamente desde el navegador.
+- **Esquemas de datos:** Documenta los modelos de datos (Task) con sus propiedades y tipos.
+
 ### Ejemplos de Uso
 
 #### Obtener todas las tareas
@@ -129,6 +151,24 @@ cp target/task-api.war /ruta/a/tomcat/webapps/
 mvn test
 ```
 
+### 5. Ejecutar pruebas con cobertura (JaCoCo)
+```bash
+mvn verify
+```
+
+### 6. Verificar reporte de cobertura
+Después de ejecutar `mvn verify`, se genera un reporte HTML de cobertura en:
+```
+target/site/jacoco/index.html
+```
+
+**Cobertura actual del proyecto:**
+- **Líneas:** 86% (≥ 80% requerido)
+- **Ramas:** 72% (≥ 70% requerido)
+- **Métodos:** 94%
+- **Clases:** 89%
+- **Total de pruebas:** 69 pruebas unitarias
+
 ## Configuración CORS
 
 La API está configurada para permitir solicitudes desde cualquier origen (`*`). Los headers CORS están configurados en `CorsFilter.java`.
@@ -162,6 +202,9 @@ El paquete PL/SQL contiene los siguientes procedimientos:
 - Jackson (JSON processing)
 - SLF4J (Logging)
 - JUnit (Testing)
+- Mockito (Testing con mocks)
+- JaCoCo (Cobertura de código)
+- Swagger/OpenAPI 3 (Documentación de API)
 
 ## Licencia
 

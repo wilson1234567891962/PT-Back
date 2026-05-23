@@ -2,6 +2,13 @@ package com.taskmanager.rest;
 
 import com.taskmanager.dao.TaskDAO;
 import com.taskmanager.model.Task;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -12,11 +19,28 @@ import java.util.List;
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Tasks", description = "Operaciones CRUD para gestión de tareas")
 public class TaskResource {
     
     private TaskDAO taskDAO = new TaskDAO();
     
     @GET
+    @Operation(
+        summary = "Obtener todas las tareas",
+        description = "Retorna una lista de todas las tareas almacenadas en la base de datos"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Lista de tareas obtenida exitosamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Task.class, type = "array"))
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor al obtener las tareas"
+        )
+    })
     public Response getAllTasks() {
         try {
             List<Task> tasks = taskDAO.getAllTasks();
@@ -30,7 +54,29 @@ public class TaskResource {
     
     @GET
     @Path("/{id}")
-    public Response getTaskById(@PathParam("id") Long id) {
+    @Operation(
+        summary = "Obtener una tarea por ID",
+        description = "Retorna una tarea específica basada en su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Tarea encontrada exitosamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Task.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Tarea no encontrada con el ID proporcionado"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor al obtener la tarea"
+        )
+    })
+    public Response getTaskById(
+            @Parameter(description = "ID de la tarea a obtener", required = true, example = "1")
+            @PathParam("id") Long id) {
         try {
             Task task = taskDAO.getTaskById(id);
             if (task == null) {
@@ -47,7 +93,30 @@ public class TaskResource {
     }
     
     @POST
-    public Response createTask(Task task) {
+    @Operation(
+        summary = "Crear una nueva tarea",
+        description = "Crea una nueva tarea en la base de datos"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Tarea creada exitosamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Task.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Solicitud inválida - El título es requerido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor al crear la tarea"
+        )
+    })
+    public Response createTask(
+            @Parameter(description = "Objeto Task a crear", required = true,
+                schema = @Schema(implementation = Task.class))
+            Task task) {
         try {
             // Validaciones básicas
             if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
@@ -69,7 +138,36 @@ public class TaskResource {
     
     @PUT
     @Path("/{id}")
-    public Response updateTask(@PathParam("id") Long id, Task task) {
+    @Operation(
+        summary = "Actualizar una tarea existente",
+        description = "Actualiza una tarea existente basada en su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Tarea actualizada exitosamente",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Task.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Solicitud inválida - El título es requerido"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Tarea no encontrada con el ID proporcionado"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor al actualizar la tarea"
+        )
+    })
+    public Response updateTask(
+            @Parameter(description = "ID de la tarea a actualizar", required = true, example = "1")
+            @PathParam("id") Long id,
+            @Parameter(description = "Objeto Task con los datos actualizados", required = true,
+                schema = @Schema(implementation = Task.class))
+            Task task) {
         try {
             // Verificar si la tarea existe
             Task existingTask = taskDAO.getTaskById(id);
@@ -97,7 +195,27 @@ public class TaskResource {
     
     @DELETE
     @Path("/{id}")
-    public Response deleteTask(@PathParam("id") Long id) {
+    @Operation(
+        summary = "Eliminar una tarea",
+        description = "Elimina una tarea específica basada en su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "204",
+            description = "Tarea eliminada exitosamente"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Tarea no encontrada con el ID proporcionado"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor al eliminar la tarea"
+        )
+    })
+    public Response deleteTask(
+            @Parameter(description = "ID de la tarea a eliminar", required = true, example = "1")
+            @PathParam("id") Long id) {
         try {
             // Verificar si la tarea existe
             Task existingTask = taskDAO.getTaskById(id);
@@ -125,6 +243,20 @@ public class TaskResource {
     // Endpoint adicional para probar el servicio
     @GET
     @Path("/test")
+    @Operation(
+        summary = "Probar el servicio y conexión a base de datos",
+        description = "Endpoint de prueba para verificar que el servicio y la conexión a la base de datos funcionan correctamente"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Servicio probado exitosamente"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error en la prueba del servicio"
+        )
+    })
     public Response testService() {
         try {
             taskDAO.testPLSQLPackage();
