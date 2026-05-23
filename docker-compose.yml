@@ -1,0 +1,91 @@
+# docker-compose.yml para el backend de Task Manager
+# Incluye la API REST y una base de datos PostgreSQL (alternativa a Oracle)
+
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL (alternativa a Oracle para desarrollo)
+  postgres:
+    image: postgres:15-alpine
+    container_name: taskmanager-db
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpass
+      TZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - taskmanager-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskuser -d taskdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # API REST de Task Manager
+  task-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    container_name: taskmanager-api
+    environment:
+      # Configuración de base de datos (PostgreSQL)
+      DB_URL: jdbc:postgresql://postgres:5432/taskdb
+      DB_USER: taskuser
+      DB_PASSWORD: taskpass
+      DB_DRIVER: org.postgresql.Driver
+      
+      # Configuración de la aplicación
+      JAVA_OPTS: "-Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Xmx512m -Xms256m"
+      TZ: America/Bogota
+      
+      # Configuración para desarrollo
+      ENVIRONMENT: development
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - taskmanager-network
+    volumes:
+      # Montar volumen para logs
+      - api_logs:/usr/local/tomcat/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/task-api/api/tasks/test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Administrador de base de datos (opcional - pgAdmin para PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: taskmanager-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@taskmanager.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      TZ: America/Bogota
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - taskmanager-network
+    restart: unless-stopped
+
+networks:
+  taskmanager-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  api_logs:
+    driver: local

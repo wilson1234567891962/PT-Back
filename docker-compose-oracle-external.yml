@@ -1,0 +1,58 @@
+# docker-compose.yml para el backend de Task Manager
+# Configuración para conectar a una base de datos Oracle externa
+
+version: '3.8'
+
+services:
+  # API REST de Task Manager (conecta a Oracle externa)
+  task-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    container_name: taskmanager-api
+    environment:
+      # Configuración de base de datos Oracle (EXTERNA - modificar según tu entorno)
+      # Ejemplo: Oracle Database en localhost
+      DB_URL: jdbc:oracle:thin:@host.docker.internal:1521:XE
+      DB_USER: system
+      DB_PASSWORD: oracle
+      DB_DRIVER: oracle.jdbc.OracleDriver
+      
+      # Configuración alternativa si Oracle está en otra máquina
+      # DB_URL: jdbc:oracle:thin:@192.168.1.100:1521:ORCL
+      # DB_USER: taskuser
+      # DB_PASSWORD: taskpass
+      
+      # Configuración de la aplicación
+      JAVA_OPTS: "-Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Xmx512m -Xms256m"
+      TZ: America/Bogota
+      
+      # Configuración para desarrollo
+      ENVIRONMENT: development
+    ports:
+      - "8080:8080"
+    networks:
+      - taskmanager-network
+    volumes:
+      # Montar volumen para logs
+      - api_logs:/usr/local/tomcat/logs
+      # Montar driver JDBC de Oracle (si no está incluido en el WAR)
+      - ./oracle-driver/ojdbc8.jar:/usr/local/tomcat/lib/ojdbc8.jar
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/task-api/api/tasks/test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Configuración de red para acceder a host externo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  taskmanager-network:
+    driver: bridge
+
+volumes:
+  api_logs:
+    driver: local

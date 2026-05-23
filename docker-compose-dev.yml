@@ -1,0 +1,52 @@
+# docker-compose.yml para desarrollo de Task Manager
+# Usa el modo de prueba (sin base de datos real)
+
+version: '3.8'
+
+services:
+  # API REST de Task Manager en modo desarrollo (sin base de datos)
+  task-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    container_name: taskmanager-api-dev
+    environment:
+      # Configuración para modo de prueba (sin base de datos real)
+      # La aplicación usará DatabaseConnection.setTestMode(true)
+      TEST_MODE: "true"
+      
+      # Configuración de la aplicación
+      JAVA_OPTS: "-Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Xmx512m -Xms256m -Dtest.mode=true"
+      TZ: America/Bogota
+      
+      # Configuración para desarrollo
+      ENVIRONMENT: development
+      DEBUG: "true"
+    ports:
+      - "8080:8080"
+      - "8000:8000"  # Puerto para debugging remoto (opcional)
+    networks:
+      - taskmanager-network
+    volumes:
+      # Montar código fuente para desarrollo en caliente
+      - ./src:/app/src
+      - ./target:/app/target
+      # Montar volumen para logs
+      - api_logs:/usr/local/tomcat/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/task-api/api/tasks/test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Comando para desarrollo (con debugging habilitado)
+    command: ["catalina.sh", "jpda", "run"]
+
+networks:
+  taskmanager-network:
+    driver: bridge
+
+volumes:
+  api_logs:
+    driver: local

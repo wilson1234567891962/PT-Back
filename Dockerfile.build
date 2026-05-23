@@ -1,0 +1,46 @@
+# Dockerfile para construir la aplicación desde el código fuente
+# Usamos Maven con Java 8 para construir el proyecto
+
+FROM maven:3.8.4-openjdk-8-slim AS build
+
+# Variables de entorno
+ENV MAVEN_OPTS="-Xmx512m -Xms256m"
+ENV TZ=America/Bogota
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos del proyecto
+COPY pom.xml .
+COPY src ./src
+
+# Descargar dependencias (caché de Maven)
+RUN mvn dependency:go-offline -B
+
+# Construir la aplicación
+RUN mvn clean package -DskipTests
+
+# Segunda etapa: imagen de producción con Tomcat
+FROM tomcat:9.0-jre8
+
+# Etiquetas informativas
+LABEL maintainer="Task Manager Team"
+LABEL version="1.0"
+
+# Variables de entorno
+ENV CATALINA_HOME=/usr/local/tomcat
+ENV PATH=$CATALINA_HOME/bin:$PATH
+ENV JAVA_OPTS="-Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Xmx512m -Xms256m"
+ENV TZ=America/Bogota
+
+# Crear directorio para la aplicación
+WORKDIR $CATALINA_HOME
+
+# Copiar el archivo WAR desde la etapa de construcción
+COPY --from=build /app/target/task-api.war $CATALINA_HOME/webapps/
+
+# Exponer el puerto de Tomcat
+EXPOSE 8080
+
+# Comando para ejecutar Tomcat
+CMD ["catalina.sh", "run"]

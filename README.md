@@ -209,3 +209,93 @@ El paquete PL/SQL contiene los siguientes procedimientos:
 ## Licencia
 
 Este proyecto es para fines educativos y de demostración técnica.
+
+## Despliegue con Docker
+
+El proyecto incluye configuración completa para despliegue con Docker.
+
+### Archivos Docker disponibles
+
+- **`Dockerfile`**: Para despliegue con WAR pre-construido
+- **`Dockerfile.build`**: Construcción completa desde código fuente (recomendado)
+- **`docker-compose.yml`**: Despliegue con PostgreSQL (alternativa a Oracle)
+- **`docker-compose-dev.yml`**: Modo desarrollo sin base de datos
+- **`docker-compose-oracle-external.yml`**: Conexión a Oracle externa
+- **`docker-commands.sh` / `docker-commands.bat`**: Scripts de utilidad
+
+### Despliegue rápido con PostgreSQL
+
+```bash
+# Construir y ejecutar
+cd PT-Back
+docker-compose up --build
+
+# Ejecutar en segundo plano
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f task-api
+
+# Probar la API
+curl http://localhost:8080/task-api/api/tasks/test
+```
+
+### Usar scripts de utilidad
+
+```bash
+# Linux/Mac
+chmod +x docker-commands.sh
+./docker-commands.sh compose-up
+
+# Windows
+docker-commands.bat compose-up
+```
+
+### Acceso a servicios
+
+- **API REST:** `http://localhost:8080/task-api/api`
+- **Swagger UI:** `http://localhost:8080/task-api/swagger-ui/`
+- **PostgreSQL:** `localhost:5432` (usuario: taskuser, contraseña: taskpass)
+- **pgAdmin:** `http://localhost:5050` (admin@taskmanager.com / admin123)
+
+### Configuración para Oracle
+
+Si necesitas conectar a Oracle Database:
+
+1. Copiar el driver JDBC (`ojdbc8.jar`) a `oracle-driver/`
+2. Configurar conexión en `docker-compose-oracle-external.yml`
+3. Ejecutar: `docker-compose -f docker-compose-oracle-external.yml up --build`
+
+Para más detalles, consulta [DOCKER-README.md](DOCKER-README.md).
+
+## Pruebas y Cobertura
+
+### Ejecutar pruebas con cobertura
+```bash
+mvn verify
+```
+
+### Ver reporte de cobertura
+Después de ejecutar `mvn verify`, abre `target/site/jacoco/index.html` en tu navegador.
+
+**Cobertura actual del proyecto:**
+- **Líneas:** 86% (≥ 80% requerido)
+- **Ramas:** 72% (≥ 70% requerido)
+- **Métodos:** 94%
+- **Clases:** 89%
+- **Total de pruebas:** 69 pruebas unitarias
+
+## Dependencias Maven
+
+- Jersey (JAX-RS implementation)
+- Oracle JDBC Driver
+- Jackson (JSON processing)
+- SLF4J (Logging)
+- JUnit (Testing)
+- Mockito (Testing con mocks)
+- JaCoCo (Cobertura de código)
+- Swagger/OpenAPI 3 (Documentación de API)
+
+## Licencia
+
+Este proyecto es para fines educativos y de demostración técnica.
