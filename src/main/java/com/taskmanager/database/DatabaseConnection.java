@@ -11,6 +11,7 @@ public class DatabaseConnection {
     private static final String DB_PASSWORD = "password";
     
     private static Connection connection = null;
+    private static boolean testMode = false;
     
     static {
         try {
@@ -23,6 +24,11 @@ public class DatabaseConnection {
     
     public static Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
+            if (testMode) {
+                // En modo de prueba, no intentamos conectarnos realmente
+                throw new SQLException("Modo de prueba activado - No hay conexión a base de datos");
+            }
+            
             Properties connectionProps = new Properties();
             connectionProps.put("user", DB_USER);
             connectionProps.put("password", DB_PASSWORD);
@@ -54,7 +60,15 @@ public class DatabaseConnection {
             }
         } catch (SQLException e) {
             System.err.println("Error al conectar a Oracle: " + e.getMessage());
-            e.printStackTrace();
+            // En modo de prueba, no imprimimos el stack trace completo
+            if (!testMode) {
+                e.printStackTrace();
+            }
         }
+    }
+    
+    // Método para activar/desactivar modo de prueba (solo para testing)
+    public static void setTestMode(boolean testMode) {
+        DatabaseConnection.testMode = testMode;
     }
 }
