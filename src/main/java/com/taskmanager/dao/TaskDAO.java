@@ -52,19 +52,18 @@ public class TaskDAO {
     
     // Método para crear una nueva tarea usando el paquete PL/SQL
     public Task createTask(Task task) throws SQLException {
-        String sql = "{call TASK_PKG.CREATE_TASK(?, ?, ?, ?)}";
+        String sql = "{call TASK_PKG.CREATE_TASK(?, ?, ?)}";
         
         try (Connection conn = DatabaseConnection.getConnection();
              CallableStatement cstmt = conn.prepareCall(sql)) {
             
             cstmt.setString(1, task.getTitle());
             cstmt.setString(2, task.getDescription());
-            cstmt.setBoolean(3, task.getCompleted() != null ? task.getCompleted() : false);
-            cstmt.registerOutParameter(4, Types.NUMERIC);
+            cstmt.registerOutParameter(3, Types.NUMERIC);
             
             cstmt.execute();
             
-            Long newTaskId = cstmt.getLong(4);
+            Long newTaskId = cstmt.getLong(3);
             task.setTaskId(newTaskId);
             
             // Obtener la tarea creada con todos los campos
@@ -124,7 +123,7 @@ public class TaskDAO {
             Task testTask = new Task();
             testTask.setTitle("Tarea de prueba");
             testTask.setDescription("Descripción de prueba");
-            testTask.setCompleted(false);
+            // No establecemos completed ya que el procedimiento CREATE_TASK no lo recibe
             
             Task createdTask = createTask(testTask);
             System.out.println("Tarea creada: " + createdTask);
