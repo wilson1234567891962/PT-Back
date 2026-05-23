@@ -72,7 +72,8 @@ private static final String DB_PASSWORD = "password";
 La API incluye documentación automática generada con Swagger (OpenAPI 3). Para acceder a la documentación interactiva:
 
 ### Swagger UI
-- **URL:** `http://localhost:8080/task-api/swagger-index.html`
+- **URL (Docker):** `http://localhost:8080/task-api/swagger-index.html`
+- **URL (Local/Jetty):** `http://localhost:8082/task-api/swagger-index.html`
 - **Descripción:** Interfaz web interactiva para explorar y probar los endpoints de la API. Contiene una especificación OpenAPI estática con todos los endpoints documentados.
 
 ### Características de la documentación:

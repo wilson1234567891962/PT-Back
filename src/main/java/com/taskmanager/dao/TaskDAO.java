@@ -9,96 +9,196 @@ import java.util.List;
 
 public class TaskDAO {
     
-    // Método para obtener todas las tareas usando el paquete PL/SQL
+    // Método para obtener todas las tareas usando el paquete PL/SQL (Oracle)
     public List<Task> getAllTasks() throws SQLException {
         List<Task> tasks = new ArrayList<>();
-        String sql = "{call TASK_PKG.GET_ALL_TASKS(?)}";
         
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement cstmt = conn.prepareCall(sql)) {
+        // Detectar si estamos usando PostgreSQL u Oracle
+        if (isPostgreSQL()) {
+            // SQL estándar para PostgreSQL
+            String sql = "SELECT task_id, title, description, completed, created_at, updated_at FROM tasks ORDER BY created_at DESC";
             
-            cstmt.registerOutParameter(1, Types.REF_CURSOR);
-            cstmt.execute();
-            
-            try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+                
                 while (rs.next()) {
                     tasks.add(mapResultSetToTask(rs));
+                }
+            }
+        } else {
+            // Paquete PL/SQL para Oracle
+            String sql = "{call TASK_PKG.GET_ALL_TASKS(?)}";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 CallableStatement cstmt = conn.prepareCall(sql)) {
+                
+                cstmt.registerOutParameter(1, Types.REF_CURSOR);
+                cstmt.execute();
+                
+                try (ResultSet rs = (ResultSet) cstmt.getObject(1)) {
+                    while (rs.next()) {
+                        tasks.add(mapResultSetToTask(rs));
+                    }
                 }
             }
         }
         return tasks;
     }
     
-    // Método para obtener una tarea por ID usando el paquete PL/SQL
+    // Método para obtener una tarea por ID usando el paquete PL/SQL (Oracle)
     public Task getTaskById(Long taskId) throws SQLException {
         Task task = null;
-        String sql = "{call TASK_PKG.GET_TASK_BY_ID(?, ?)}";
         
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement cstmt = conn.prepareCall(sql)) {
+        // Detectar si estamos usando PostgreSQL u Oracle
+        if (isPostgreSQL()) {
+            // SQL estándar para PostgreSQL
+            String sql = "SELECT task_id, title, description, completed, created_at, updated_at FROM tasks WHERE task_id = ?";
             
-            cstmt.setLong(1, taskId);
-            cstmt.registerOutParameter(2, Types.REF_CURSOR);
-            cstmt.execute();
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                pstmt.setLong(1, taskId);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        task = mapResultSetToTask(rs);
+                    }
+                }
+            }
+        } else {
+            // Paquete PL/SQL para Oracle
+            String sql = "{call TASK_PKG.GET_TASK_BY_ID(?, ?)}";
             
-            try (ResultSet rs = (ResultSet) cstmt.getObject(2)) {
-                if (rs.next()) {
-                    task = mapResultSetToTask(rs);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 CallableStatement cstmt = conn.prepareCall(sql)) {
+                
+                cstmt.setLong(1, taskId);
+                cstmt.registerOutParameter(2, Types.REF_CURSOR);
+                cstmt.execute();
+                
+                try (ResultSet rs = (ResultSet) cstmt.getObject(2)) {
+                    if (rs.next()) {
+                        task = mapResultSetToTask(rs);
+                    }
                 }
             }
         }
         return task;
     }
     
-    // Método para crear una nueva tarea usando el paquete PL/SQL
+    // Método para crear una nueva tarea usando el paquete PL/SQL (Oracle)
     public Task createTask(Task task) throws SQLException {
-        String sql = "{call TASK_PKG.CREATE_TASK(?, ?, ?)}";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement cstmt = conn.prepareCall(sql)) {
+        // Detectar si estamos usando PostgreSQL u Oracle
+        if (isPostgreSQL()) {
+            // SQL estándar para PostgreSQL
+            String sql = "INSERT INTO tasks (title, description, completed) VALUES (?, ?, ?) RETURNING task_id";
             
-            cstmt.setString(1, task.getTitle());
-            cstmt.setString(2, task.getDescription());
-            cstmt.registerOutParameter(3, Types.NUMERIC);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                pstmt.setString(1, task.getTitle());
+                pstmt.setString(2, task.getDescription());
+                pstmt.setBoolean(3, task.getCompleted() != null ? task.getCompleted() : false);
+                
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        Long newTaskId = rs.getLong(1);
+                        task.setTaskId(newTaskId);
+                        
+                        // Obtener la tarea creada con todos los campos
+                        return getTaskById(newTaskId);
+                    } else {
+                        throw new SQLException("No se pudo obtener el ID de la tarea creada");
+                    }
+                }
+            }
+        } else {
+            // Paquete PL/SQL para Oracle
+            String sql = "{call TASK_PKG.CREATE_TASK(?, ?, ?)}";
             
-            cstmt.execute();
-            
-            Long newTaskId = cstmt.getLong(3);
-            task.setTaskId(newTaskId);
-            
-            // Obtener la tarea creada con todos los campos
-            return getTaskById(newTaskId);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 CallableStatement cstmt = conn.prepareCall(sql)) {
+                
+                cstmt.setString(1, task.getTitle());
+                cstmt.setString(2, task.getDescription());
+                cstmt.registerOutParameter(3, Types.NUMERIC);
+                
+                cstmt.execute();
+                
+                Long newTaskId = cstmt.getLong(3);
+                task.setTaskId(newTaskId);
+                
+                // Obtener la tarea creada con todos los campos
+                return getTaskById(newTaskId);
+            }
         }
     }
     
-    // Método para actualizar una tarea usando el paquete PL/SQL
+    // Método para actualizar una tarea usando el paquete PL/SQL (Oracle)
     public Task updateTask(Long taskId, Task task) throws SQLException {
-        String sql = "{call TASK_PKG.UPDATE_TASK(?, ?, ?, ?)}";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement cstmt = conn.prepareCall(sql)) {
+        // Detectar si estamos usando PostgreSQL u Oracle
+        if (isPostgreSQL()) {
+            // SQL estándar para PostgreSQL
+            String sql = "UPDATE tasks SET title = ?, description = ?, completed = ? WHERE task_id = ?";
             
-            cstmt.setLong(1, taskId);
-            cstmt.setString(2, task.getTitle());
-            cstmt.setString(3, task.getDescription());
-            // Convertir Boolean a NUMBER (0 o 1) para Oracle
-            cstmt.setInt(4, task.getCompleted() != null && task.getCompleted() ? 1 : 0);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                pstmt.setString(1, task.getTitle());
+                pstmt.setString(2, task.getDescription());
+                pstmt.setBoolean(3, task.getCompleted() != null ? task.getCompleted() : false);
+                pstmt.setLong(4, taskId);
+                
+                int rowsAffected = pstmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    return getTaskById(taskId);
+                } else {
+                    throw new SQLException("No se encontró la tarea con ID: " + taskId);
+                }
+            }
+        } else {
+            // Paquete PL/SQL para Oracle
+            String sql = "{call TASK_PKG.UPDATE_TASK(?, ?, ?, ?)}";
             
-            cstmt.execute();
-            
-            return getTaskById(taskId);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 CallableStatement cstmt = conn.prepareCall(sql)) {
+                
+                cstmt.setLong(1, taskId);
+                cstmt.setString(2, task.getTitle());
+                cstmt.setString(3, task.getDescription());
+                // Convertir Boolean a NUMBER (0 o 1) para Oracle
+                cstmt.setInt(4, task.getCompleted() != null && task.getCompleted() ? 1 : 0);
+                
+                cstmt.execute();
+                
+                return getTaskById(taskId);
+            }
         }
     }
     
-    // Método para eliminar una tarea usando el paquete PL/SQL
+    // Método para eliminar una tarea usando el paquete PL/SQL (Oracle)
     public boolean deleteTask(Long taskId) throws SQLException {
-        String sql = "{call TASK_PKG.DELETE_TASK(?)}";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement cstmt = conn.prepareCall(sql)) {
+        // Detectar si estamos usando PostgreSQL u Oracle
+        if (isPostgreSQL()) {
+            // SQL estándar para PostgreSQL
+            String sql = "DELETE FROM tasks WHERE task_id = ?";
             
-            cstmt.setLong(1, taskId);
-            return cstmt.executeUpdate() > 0;
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                pstmt.setLong(1, taskId);
+                return pstmt.executeUpdate() > 0;
+            }
+        } else {
+            // Paquete PL/SQL para Oracle
+            String sql = "{call TASK_PKG.DELETE_TASK(?)}";
+            
+            try (Connection conn = DatabaseConnection.getConnection();
+                 CallableStatement cstmt = conn.prepareCall(sql)) {
+                
+                cstmt.setLong(1, taskId);
+                return cstmt.executeUpdate() > 0;
+            }
         }
     }
     
@@ -114,11 +214,19 @@ public class TaskDAO {
         return task;
     }
     
+    // Método auxiliar para detectar si estamos usando PostgreSQL
+    private boolean isPostgreSQL() {
+        String driver = System.getenv().getOrDefault("DB_DRIVER", "oracle.jdbc.driver.OracleDriver");
+        return driver != null && driver.toLowerCase().contains("postgresql");
+    }
+    
     // Método para probar la conexión y el paquete PL/SQL
     public void testPLSQLPackage() {
         try {
             System.out.println("Probando conexión a la base de datos...");
             DatabaseConnection.testConnection();
+            
+            System.out.println("Base de datos detectada: " + (isPostgreSQL() ? "PostgreSQL" : "Oracle"));
             
             System.out.println("Creando tarea de prueba...");
             Task testTask = new Task();
