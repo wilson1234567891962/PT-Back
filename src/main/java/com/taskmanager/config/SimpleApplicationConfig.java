@@ -1,6 +1,6 @@
 package com.taskmanager.config;
 
-import com.taskmanager.infrastructure.config.DependencyInjectionConfig;
+import com.taskmanager.infrastructure.adapters.primary.rest.TaskController;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -15,28 +15,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationPath("/api")
-public class ApplicationConfig extends ResourceConfig {
+public class SimpleApplicationConfig extends ResourceConfig {
     
-    public ApplicationConfig() {
-        // Usar la configuración de inyección de dependencias hexagonal
-        super(DependencyInjectionConfig.class);
+    public SimpleApplicationConfig() {
+        // Usar el proveedor de dependencias
+        super(DependencyProvider.class);
+        
+        // Registrar controladores REST
+        register(TaskController.class);
+        
+        // Registrar filtros y mapeadores de excepción
+        register(CorsFilter.class);
+        register(GenericExceptionMapper.class);
         
         // Configurar Swagger/OpenAPI
         configureSwagger();
         
         // Configurar propiedades del servidor
         property(ServerProperties.RESPONSE_SET_STATUS_OVER_SEND_ERROR, true);
-        
-        // Habilitar CORS
-        register(CorsFilter.class);
-        
-        // Configurar para devolver JSON por defecto
         property(ServerProperties.MEDIA_TYPE_MAPPINGS, "json:application/json");
         
-        // Configurar para manejar excepciones
-        register(GenericExceptionMapper.class);
-        
-        System.out.println("Aplicación REST hexagonal configurada en /api con Swagger");
+        System.out.println("Aplicación REST configurada en /api con Swagger");
     }
     
     private void configureSwagger() {

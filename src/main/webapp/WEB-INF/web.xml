@@ -15,13 +15,19 @@
         <!-- Especificar la clase de configuración de la aplicación -->
         <init-param>
             <param-name>javax.ws.rs.Application</param-name>
-            <param-value>com.taskmanager.config.ApplicationConfig</param-value>
+            <param-value>com.taskmanager.config.ManualDependencyConfig</param-value>
         </init-param>
         
         <!-- Configuración adicional de Jersey -->
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>com.taskmanager</param-value>
+            <param-value>
+                com.taskmanager.infrastructure.adapters.primary.rest,
+                com.taskmanager.application.services,
+                com.taskmanager.infrastructure.adapters.secondary.persistence,
+                com.taskmanager.infrastructure.config,
+                com.taskmanager.config
+            </param-value>
         </init-param>
         
         <init-param>
